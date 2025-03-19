@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Usage Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #f8f9fa;
+      }
+      .dashboard-container {
+        max-width: calc(100% - 100px);
+        margin: 0 auto;
+        padding: 2rem 0;
+      }
+      .success {
+        color: #198754;
+      }
+      .error {
+        color: #dc3545;
+      }
+      .price {
+        font-family: monospace;
+      }
+      .input-type {
+        text-transform: capitalize;
+        font-weight: 500;
+      }
+      .execution-time {
+        font-family: monospace;
+        color: #6c757d;
+      }
+      .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <h1 class="mb-4">API Usage Dashboard</h1>
+
+      <!-- Tổng quan -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Tổng số lượt gọi</h5>
+              <p class="card-text h2"><%= logs.length %></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Tổng token đã dùng</h5>
+              <p class="card-text h2">
+                <%= logs.reduce((sum, log) => sum + log.total_token,
+                0).toLocaleString() %>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Tổng chi phí (USD)</h5>
+              <p class="card-text h2 price">
+                $<%= logs.reduce((sum, log) => sum + log.price_per_request,
+                0).toFixed(6) %>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Tổng chi phí (VND)</h5>
+              <p class="card-text h2 price">
+                <%= logs.reduce((sum, log) => sum + log.price_per_request_vnd,
+                0).toLocaleString() %>đ
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Thêm card thống kê thời gian -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Thời gian trung bình</h5>
+              <p class="card-text h2 execution-time">
+                <%= (logs.reduce((sum, log) => sum + log.execution_time, 0) /
+                logs.length || 0).toFixed(0) %>ms
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Thời gian nhanh nhất</h5>
+              <p class="card-text h2 execution-time">
+                <%= Math.min(...logs.map(log => log.execution_time)) %>ms
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Thời gian chậm nhất</h5>
+              <p class="card-text h2 execution-time">
+                <%= Math.max(...logs.map(log => log.execution_time)) %>ms
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bảng chi tiết -->
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title mb-4">Chi tiết các lượt gọi API</h2>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Trạng thái</th>
+                  <th>Loại Input</th>
+                  <th>Thời gian xử lý</th>
+                  <th>Token Input</th>
+                  <th>Token Output</th>
+                  <th>Tổng Token</th>
+                  <th>Giá Input ($)</th>
+                  <th>Giá Output ($)</th>
+                  <th>Tổng ($)</th>
+                  <th>Tổng (VND)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% logs.reverse().forEach(log => { %>
+                <tr>
+                  <td><%= new Date(log.timestamp).toLocaleString() %></td>
+                  <td>
+                    <% if(log.status) { %>
+                    <span class="badge bg-success">Thành công</span>
+                    <% } else { %>
+                    <span class="badge bg-danger">Thất bại</span>
+                    <% } %>
+                  </td>
+                  <td class="input-type">
+                    <%= log.input_type.toLowerCase() %>
+                  </td>
+                  <td class="execution-time"><%= log.execution_time %>ms</td>
+                  <td><%= log.input_token.toLocaleString() %></td>
+                  <td><%= log.output_token.toLocaleString() %></td>
+                  <td><%= log.total_token.toLocaleString() %></td>
+                  <td class="price">$<%= log.price_per_input.toFixed(6) %></td>
+                  <td class="price">$<%= log.price_per_output.toFixed(6) %></td>
+                  <td class="price">
+                    $<%= log.price_per_request.toFixed(6) %>
+                  </td>
+                  <td class="price">
+                    <%= log.price_per_request_vnd.toLocaleString() %>đ
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
